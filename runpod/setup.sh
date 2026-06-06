@@ -20,6 +20,10 @@ python -c "import torch; print('  torch', torch.__version__, 'cuda', torch.cuda.
 
 echo "=== [2/6] python packages (pinned for FLUX + PiD) ==="
 pip install -q -e /workspace/scriptframes
+# transformers>=4.57 (needed by PiD) requires torch>=2.7 for the fp8 dtype
+# torch.float8_e8m0fnu. Stock pod images often ship an older torch, so upgrade it.
+pip install -q --upgrade "torch==2.7.1" "torchvision==0.22.1" "torchaudio==2.7.1" \
+    --index-url https://download.pytorch.org/whl/cu126
 pip install -q "huggingface_hub>=0.27" "diffusers>=0.37" "transformers>=4.57" \
     accelerate peft sentencepiece protobuf
 
