@@ -42,11 +42,16 @@ def upscale_image(input_path, out_path, prompt, config) -> None:
         if prompt:
             cmd += ["--prompt", prompt]
         subprocess.run(cmd, check=True, cwd=str(pid_dir), env=env)
-        produced = sorted(
-            glob.glob(td + "/**/*.png", recursive=True), key=os.path.getmtime
-        )
-        if not produced:
-            raise RuntimeError(f"PiD produced no output for {input_path}")
+        # PiD writes the input copy and a plain vae_decode baseline alongside the real
+        # super-res result; keep only the PiD output.
+        candidates = [
+            p for p in glob.glob(td + "/**/*.png", recursive=True)
+            if "/input/" not in p.replace("\\", "/")
+            and "/vae_decode/" not in p.replace("\\", "/")
+        ]
+        if not candidates:
+            raise RuntimeError(f"PiD produced no super-res output for {input_path}")
+        produced = sorted(candidates, key=os.path.getmtime)
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(produced[-1], out_path)
 
