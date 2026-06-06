@@ -15,8 +15,12 @@ def build_system_prompt(min_beats: int, max_beats: int, character_brief: str) ->
         '"scene_description" (what is happening, plain language),\n'
         '"emotion" (one short label, e.g. anxiety, conflict, awe, calm, determination),\n'
         '"image_prompt" (a single line describing the drawing).\n'
-        "Every image_prompt MUST visually depict the scene featuring the character and "
-        "style described above, and convey the beat's emotion.\n"
+        "Every image_prompt MUST feature the SAME recurring character described above, "
+        "depicted consistently, and convey the beat's emotion through its pose, expression, "
+        "and simple symbols.\n"
+        "CRITICAL: refer to that character explicitly in every image_prompt and NEVER replace "
+        "it with a generic 'man', 'woman', 'person', 'boy', 'girl', or a human name - it is "
+        "always the same character. Vary only the setting, pose, and emotion.\n"
         "Do not include any prose outside the JSON array."
     )
 
