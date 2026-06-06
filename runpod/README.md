@@ -138,6 +138,21 @@ narration/script). Create it with whichever method suits you:
 
 Confirm it's there: `head -3 projects/myvideo/script.txt`
 
+**Worked example** — paste this whole block to create a ready-to-run script:
+```bash
+mkdir -p projects/demo
+cat > projects/demo/script.txt <<'SCRIPT_EOF'
+The Lighthouse Keeper
+
+For forty years he kept the light burning, alone on the rock.
+Ships passed in the dark, never knowing his name.
+One night the storm tore the lamp away, and he climbed the tower with a lantern gripped in his teeth.
+By dawn the sea was calm, and the village below never knew how close they came.
+SCRIPT_EOF
+head -3 projects/demo/script.txt
+```
+Longer narration scripts work exactly the same way — just more lines between the markers.
+
 > The script's length drives how many images you get — the LLM splits it into
 > `min_beats`–`max_beats` beats (set in your profile). A short script can't make 40 beats;
 > lower `min_beats` for short tests.
