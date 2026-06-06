@@ -32,7 +32,7 @@ if [ ! -d /workspace/PiD ]; then
   git clone https://github.com/nv-tlabs/PiD.git /workspace/PiD
 fi
 pip install -q hydra-core omegaconf attrs einops loguru termcolor fvcore iopath \
-    imageio opencv-python-headless pandas boto3 botocore
+    imageio opencv-python-headless pandas boto3 botocore wandb
 pip install -q -e /workspace/PiD
 # PiD checkpoints (only the model weights) onto the volume
 python - <<'PY'
