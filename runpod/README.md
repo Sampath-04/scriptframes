@@ -115,28 +115,60 @@ Edit `profiles/wukong.yaml`:
 cd /workspace/scriptframes
 export HF_HOME=/workspace/hf_cache
 export HF_TOKEN=hf_your_token
-
 mkdir -p projects/myvideo
-#  put your full script text in projects/myvideo/script.txt  (e.g. via the Jupyter file editor)
+```
 
-# 1) script -> per-image prompts (loads Qwen ~1 min)
+### Step 1 — Add your script  ← this is the input you provide
+The pipeline reads a plain-text file at **`projects/myvideo/script.txt`** (your full
+narration/script). Create it with whichever method suits you:
+
+- **Jupyter file editor (easiest for long text):** RunPod pods expose JupyterLab — open it,
+  navigate to `workspace/scriptframes/projects/myvideo/`, create `script.txt`, paste your
+  script, save.
+- **nano:** `apt-get install -y nano && nano projects/myvideo/script.txt` (paste, Ctrl-O, Enter, Ctrl-X).
+- **Heredoc (paste the whole block):**
+  ```bash
+  cat > projects/myvideo/script.txt <<'EOF'
+  Your full script goes here.
+  As many lines/paragraphs as you want.
+  EOF
+  ```
+- **From your PC:** put it in a file locally and `runpodctl send script.txt`, then
+  `runpodctl receive <code>` on the pod and move it to `projects/myvideo/script.txt`.
+
+Confirm it's there: `head -3 projects/myvideo/script.txt`
+
+> The script's length drives how many images you get — the LLM splits it into
+> `min_beats`–`max_beats` beats (set in your profile). A short script can't make 40 beats;
+> lower `min_beats` for short tests.
+
+### Step 2 — Script → per-image prompts (loads Qwen, ~1 min)
+```bash
 scriptframes segment projects/myvideo --config profiles/wukong.yaml
-#    -> writes projects/myvideo/beats.json + manifest.json
-#    (optional) open beats.json and tweak prompts; if you edit it, re-run segment to rebuild
+#  writes projects/myvideo/beats.json + manifest.json
+#  (optional) open beats.json to tweak prompts; if you edit it, re-run segment to rebuild
+```
 
-# 2) smoke-test 3 images first (loads FLUX + LoRA)
+### Step 3 — Smoke-test 3 images first (loads FLUX + LoRA)
+```bash
 scriptframes generate projects/myvideo --config profiles/wukong.yaml --limit 3
-#    check projects/myvideo/images/01.png..03.png
+#  check projects/myvideo/images/01.png..03.png before committing to the full run
+```
 
-# 3) full unattended run (resumable + continue-on-error) — use tmux so it survives disconnects
-tmux new -s gen
+### Step 4 — Full unattended run (resumable + continue-on-error)
+```bash
+tmux new -s gen        # so it survives disconnects
 scriptframes generate projects/myvideo --config profiles/wukong.yaml
-#    detach: Ctrl-b then d   |  reattach: tmux attach -t gen
+#  detach: Ctrl-b then d   |   reattach: tmux attach -t gen
+```
 
-# 4) re-run only failed beats, if any
+### Step 5 — Re-run only failed beats (if any)
+```bash
 scriptframes generate projects/myvideo --config profiles/wukong.yaml --retry-failed
+```
 
-# 5) (optional) PiD upscale to 2K/4K
+### Step 6 — (optional) PiD upscale to 2K/4K
+```bash
 scriptframes upscale projects/myvideo --config profiles/wukong.yaml
 ```
 
