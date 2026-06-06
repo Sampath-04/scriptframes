@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.env
+# Per-project work and model weights live on the pod volume, not in git
+projects/
+models/
+*.safetensors
+*.tar.gz
+*.zip

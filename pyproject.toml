@@ -1,0 +1,24 @@
+[project]
+name = "scriptframes"
+version = "0.1.0"
+description = "Turn a script into consistent on-style images using FLUX + any LoRA."
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "pillow>=10.0",
+]
+
+[project.optional-dependencies]
+# Installed on the GPU pod (see runpod/setup.sh, which pins exact versions).
+gpu = ["torch", "diffusers>=0.37", "transformers>=4.57", "accelerate", "peft", "sentencepiece", "protobuf"]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+scriptframes = "scriptframes.cli:main"
