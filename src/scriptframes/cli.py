@@ -60,8 +60,19 @@ def cmd_upscale(args) -> None:
     if config.upscale != "pid":
         raise SystemExit("set `upscale: pid` in the config to use this command")
     from .upscale import upscale_project   # lazy: needs the PiD install
+    from .prompt_template import finalize_prompt
     project = Path(args.project)
-    n = upscale_project(project / "images", project / f"images_{config.pid_resolution}", config)
+    # feed each image's own prompt to PiD as the decoder caption
+    prompts = {}
+    manifest = M.load_manifest(project / "manifest.json")
+    for e in manifest["entries"]:
+        name = Path(e["output_file"]).name
+        prompts[name] = finalize_prompt(
+            e["image_prompt"], config.trigger_word, config.style_suffix
+        )
+    n = upscale_project(
+        project / "images", project / f"images_{config.pid_resolution}", config, prompts
+    )
     print(f"upscaled {n} images to {config.pid_resolution}")
 
 
