@@ -34,11 +34,20 @@ fi
 pip install -q hydra-core omegaconf attrs einops loguru termcolor fvcore iopath \
     imageio opencv-python-headless pandas boto3 botocore wandb
 pip install -q -e /workspace/PiD
-# PiD checkpoints (only the model weights) onto the volume
+# PiD checkpoints — ONLY the flux ones (the full set is ~33GB across 7 backbones;
+# we use FLUX.1 only, so pull just the flux 2k/4k decoders + the shared FLUX VAE ~5.5GB)
 python - <<'PY'
 from huggingface_hub import snapshot_download
-snapshot_download("nvidia/PiD", allow_patterns=["checkpoints/*"], local_dir="/workspace/PiD")
-print("  PiD checkpoints ready")
+snapshot_download(
+    "nvidia/PiD",
+    allow_patterns=[
+        "checkpoints/ae.safetensors",
+        "checkpoints/PiD_res2k_sr4x_official_flux_distill_4step/*",
+        "checkpoints/PiD_res2kto4k_sr4x_official_flux_distill_4step/*",
+    ],
+    local_dir="/workspace/PiD",
+)
+print("  PiD flux checkpoints ready")
 PY
 
 echo "=== [4/6] base models (skip the redundant 24 GB single-file FLUX copy) ==="
