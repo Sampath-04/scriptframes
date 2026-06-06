@@ -26,7 +26,8 @@ class Config:
     character_brief: str = ""       # description of the character/style for the LLM
     # Optional PiD upscaling
     upscale: str = "none"           # "none" | "pid"
-    pid_resolution: str = "2k"      # "2k" | "4k"
+    pid_resolution: str = "2k"      # "2k" | "4k" (which PiD checkpoint)
+    pid_scale: int = 2              # output = input * scale (2 keeps 48GB happy; 4 = 8K, OOMs)
     pid_dir: str = "/workspace/PiD" # where the PiD repo + checkpoints live
 
 

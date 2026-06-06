@@ -25,18 +25,23 @@ _CKPT = {"2k": "2k", "4k": "2kto4k"}
 def upscale_image(input_path, out_path, prompt, config) -> None:
     ckpt = _CKPT.get(config.pid_resolution, "2k")
     pid_dir = Path(config.pid_dir)
+    # PiD's 2k checkpoint is SR-4x; on 48GB that 4x'es a ~1344px frame to ~5K and OOMs.
+    # Cap the output factor via --scale (2 -> ~2.7K from a 1344px source) and reduce
+    # CUDA fragmentation so the high-res decode fits.
+    env = dict(os.environ, PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True")
     with tempfile.TemporaryDirectory(dir=str(pid_dir)) as td:
         cmd = [
             sys.executable, "-m", "pid._src.inference.from_clean",
             "--backbone", "flux",
             "--pid_ckpt_type", ckpt,
+            "--scale", str(config.pid_scale),
             "--input_path", str(Path(input_path).resolve()),
             "--output_dir", td,
             "--save_format", "png",
         ]
         if prompt:
             cmd += ["--prompt", prompt]
-        subprocess.run(cmd, check=True, cwd=str(pid_dir))
+        subprocess.run(cmd, check=True, cwd=str(pid_dir), env=env)
         produced = sorted(
             glob.glob(td + "/**/*.png", recursive=True), key=os.path.getmtime
         )
