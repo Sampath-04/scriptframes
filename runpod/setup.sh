@@ -53,7 +53,12 @@ print("  models cached")
 PY
 
 echo "=== [5/6] verify model integrity (sha256) ==="
-python /workspace/scriptframes/runpod/verify_models.py black-forest-labs/FLUX.1-dev Qwen/Qwen2.5-14B-Instruct
+if [ -f /workspace/hf_cache/.verified ]; then
+  echo "  already verified earlier (delete /workspace/hf_cache/.verified to re-check)"
+else
+  python /workspace/scriptframes/runpod/verify_models.py black-forest-labs/FLUX.1-dev Qwen/Qwen2.5-14B-Instruct \
+    && touch /workspace/hf_cache/.verified
+fi
 
 echo "=== [6/6] done ==="
 echo "Next: download a LoRA, then run a project. See runpod/README.md"
