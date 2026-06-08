@@ -25,7 +25,10 @@ def build_system_prompt(min_beats: int, max_beats: int, character_brief: str) ->
         "character is ALWAYS the same recurring character.\n"
         "- If a beat needs other characters, add them as separate 'other people' (generic, may "
         "look different) who are NOT the main character and never replace it.\n"
-        "- Keep the main character the clear focus of every image; vary pose, expression, props.\n"
+        "- Keep the main character the clear, prominent focus, but VARY its placement across "
+        "beats - sometimes left, sometimes right, sometimes center - and vary framing (full "
+        "body vs close-up) and pose/expression, leaving space on the opposite side for props, "
+        "icons, or captions. Avoid putting it dead-center every time.\n"
         "Do not include any prose outside the JSON array."
     )
 
