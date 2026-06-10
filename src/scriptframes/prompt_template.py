@@ -9,14 +9,27 @@ def build_system_prompt(min_beats: int, max_beats: int, character_brief: str) ->
         '"source_line" (the script sentence(s) this beat depicts),\n'
         '"scene_description" (what is happening, plain language),\n'
         '"emotion" (one short label, e.g. anxiety, conflict, awe, calm, determination),\n'
-        '"shot" (either "closeup" for an emotional face/upper-body moment, or "full" for a '
-        'full-body scene/action),\n'
-        '"image_prompt" (a single line describing the drawing).\n'
-        "Every image_prompt MUST feature the SAME recurring main character described above, "
-        "depicted consistently. Refer to it as 'the same cartoon mascot character' (or similar) "
-        "and NEVER replace it with a generic 'man', 'woman', 'person', 'boy', 'girl', 'animal', "
-        "or a human name. If a beat needs others, call them 'other people' (generic). Vary the "
-        "setting, pose, expression, and the character's placement (left/right/center) across beats.\n"
+        '"shot" (use "closeup" ONLY for a pure face/upper-body emotion moment with no setting; '
+        'use "full" for ANY scene that has a setting, action, props, or full body - e.g. sitting '
+        'in a car, on a ropeway, walking),\n'
+        '"image_prompt" (a VIVID, COMPLETE scene description - 2 to 4 clauses, NOT a bare line).\n'
+        "\n"
+        "Each image_prompt MUST include ALL of:\n"
+        " (a) the SAME recurring main character (described above) with a SPECIFIC pose and facial "
+        "expression;\n"
+        " (b) the setting/background with concrete objects (a room with a window and a couch, a "
+        "city street, the inside of a small car, a misty mountain ropeway, etc.);\n"
+        " (c) a symbolic element that conveys the idea where useful (a thought bubble with a small "
+        "image inside it, a dark storm cloud, a warning triangle, floating question marks, hearts);\n"
+        " (d) composition - where the character is placed (left / right / center) and what fills "
+        "the opposite side.\n"
+        "NEVER write a bare prompt like 'the mascot looking worried'. NEVER replace the main "
+        "character with a generic 'man', 'woman', 'person', 'boy', 'girl', 'animal', or a name; "
+        "extra characters are 'other people' (generic). Vary placement and framing across beats.\n"
+        "Example of a GOOD image_prompt: \"the same cartoon mascot sitting inside a small car "
+        "gripping the steering wheel with both hands, eyes wide and sweating with worry, a thought "
+        "bubble in the upper-left showing two cars crashing, simple street and sky in the "
+        "background, mascot on the right side of the frame\".\n"
         "Do not include any prose outside the JSON array."
     )
 
