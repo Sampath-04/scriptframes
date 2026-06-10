@@ -32,7 +32,7 @@ def upscale_image(input_path, out_path, prompt, config) -> None:
     with tempfile.TemporaryDirectory(dir=str(pid_dir)) as td:
         cmd = [
             sys.executable, "-m", "pid._src.inference.from_clean",
-            "--backbone", "flux",
+            "--backbone", config.pid_backbone,
             "--pid_ckpt_type", ckpt,
             "--scale", str(config.pid_scale),
             "--input_path", str(Path(input_path).resolve()),

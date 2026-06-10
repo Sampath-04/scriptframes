@@ -45,10 +45,10 @@ def cmd_segment(args) -> None:
 
 def cmd_generate(args) -> None:
     config = load_config(args.config)
-    from .generate import run_batch, FluxGenerator  # lazy: heavy GPU import
+    from .generate import run_batch, Flux2Generator  # lazy: heavy GPU import
     project = Path(args.project)
     manifest = M.load_manifest(project / "manifest.json")
-    generator = FluxGenerator(config)
+    generator = Flux2Generator(config)
     run_batch(manifest, project / "manifest.json", project / "images",
               generator, config, limit=args.limit, only_failed=args.retry_failed)
     done = sum(1 for e in manifest["entries"] if e["status"] == "done")
@@ -67,9 +67,7 @@ def cmd_upscale(args) -> None:
     manifest = M.load_manifest(project / "manifest.json")
     for e in manifest["entries"]:
         name = Path(e["output_file"]).name
-        prompts[name] = finalize_prompt(
-            e["image_prompt"], config.trigger_word, config.style_suffix
-        )
+        prompts[name] = finalize_prompt(e["image_prompt"], config.style_suffix)
     n = upscale_project(
         project / "images", project / f"images_{config.pid_resolution}", config, prompts
     )

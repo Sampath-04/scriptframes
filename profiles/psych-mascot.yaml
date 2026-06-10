@@ -1,23 +1,21 @@
-# Example profile: a psychology channel using a trained character LoRA ("psymascot").
-# This is the real-world pattern — a custom-trained mascot driving every scene.
-# Note the character_brief: it forces the LLM to anchor every prompt to the mascot
-# and never substitute a generic person (the #1 cause of character drift).
+# Mascot profile for a psychology channel, using FLUX.2 reference-based consistency.
+# The character is locked by the reference images in references_dir (closeup/ + full/),
+# NOT by a trained LoRA. Put your anchor packs at references_dir before generating.
 llm_model: "Qwen/Qwen2.5-14B-Instruct"
-flux_model: "black-forest-labs/FLUX.1-dev"
-lora_path: "/workspace/models/psymascot_lora.safetensors"
-lora_scale: 1.3
+flux2_model: "black-forest-labs/FLUX.2-klein-9B"
+references_dir: "/workspace/references"   # must contain closeup/ and full/ subfolders
+ref_count: 8                              # how many anchors to feed per image
 base_seed: 1234567
 width: 1344
 height: 768
-steps: 32
-guidance: 3.5
+steps: 6                                  # klein is distilled -> few steps
 min_beats: 12
 max_beats: 40
 max_parse_retries: 3
-trigger_word: "psymascot"
-style_suffix: "flat 2D vector cartoon, bold black outlines, flat solid colors, no shading, plain background"
-character_brief: "CRITICAL: every image_prompt features the SAME mascot 'psymascot' as the LARGE, PROMINENT main character - a round flat-2D-vector cartoon with a cream round head, brown hair tuft, big expressive eyes, rosy cheeks, a mustard-yellow sweater and blue pants. Always begin each image_prompt with 'psymascot' and keep it identical across every scene. VARY its placement scene to scene - sometimes on the left, sometimes the right, sometimes center - based on what the scene emphasizes, leaving room on the opposite side for symbolic props/icons or captions (storm cloud, warning sign, thought bubble, hearts); do not put it dead-center every time. NEVER replace psymascot with a man, woman, person, boy, child, animal, or a human name. If a beat needs others, add them as separate 'other people' (generic, may look different) who are NOT psymascot. Keep backgrounds simple/plain rather than busy. Vary pose, framing, expression, and icons."
+character_brief: "Every scene features the SAME recurring cartoon mascot: a round character with a cream round head, a brown hair tuft, big expressive eyes, rosy cheeks, a mustard-yellow t-shirt and dark blue pants. It is a flat 2D vector cartoon. Always depict this same mascot; never replace it with a generic man, woman, person, boy or animal."
+style_suffix: "flat 2D vector cartoon, bold black outlines, flat solid colors, plain cream background"
 upscale: "pid"
 pid_resolution: "2k"
 pid_scale: 2
+pid_backbone: "flux2"
 pid_dir: "/workspace/PiD"

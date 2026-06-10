@@ -1,78 +1,89 @@
 # scriptframes
 
-Turn a script into a set of **consistent, on-style images** using **FLUX.1-dev + any LoRA**,
-driven by simple per-project **profile configs**. Built to run unattended on a GPU pod:
-feed it a script, walk away, come back to 40–50 finished frames.
+Turn a video **script** into a set of **consistent, on-character images** using
+**FLUX.2 (klein)** with **reference images** — no LoRA training needed.
 
-Originally built for a black-and-white stick-figure channel, now generic — the engine has
-no hardcoded character. Each character/series is just a YAML profile.
+You give it: a script + a handful of reference pictures of your character.
+It gives you: 40–50 images of *that same character* acting out the script.
 
-## How it works
+## How it keeps the character consistent
+
+Instead of training a model on your character (a LoRA, which drifts), we hand
+**FLUX.2 a few reference pictures of the character every time it draws**. It stays
+close to those references, so the character looks the same in every scene.
 
 ```
 script.txt
-   │  segment   (open LLM: Qwen2.5)        ← uses the profile's character_brief
+   │  1) segment  (LLM: Qwen)         → beats.json  (one scene prompt per image,
+   │                                                  each tagged closeup or full)
    ▼
-beats.json      ~N beats, each an image prompt
-   │  (optional manual review)
+beats.json
+   │  2) generate (FLUX.2 klein)      → for each beat, feed the matching reference
+   │                                     pack (closeup vs full) + the scene prompt
    ▼
-generate        (FLUX.1-dev + your LoRA)   ← trigger_word + style_suffix from the profile
+images/01.png … NN.png
+   │  3) upscale  (optional, NVIDIA PiD) → crisp 2K/4K frames
    ▼
-images/01.png … NN.png   (+ manifest.json: prompt, seed, status per image)
-   │  upscale   (optional NVIDIA PiD)      ← 2K / 4K cinematic frames
-   ▼
-images_2k/ …
+images_2k/
 ```
 
-- **Resumable & continue-on-error**: re-running skips finished images; failures are logged,
-  not fatal; `--retry-failed` re-runs just the failures.
-- **Reproducible**: deterministic per-beat seeds recorded in the manifest.
-- **Profile-driven**: swap character/style by pointing to a different config — no code changes.
+## Your reference packs
 
-## A profile (config) is the only thing that changes per character
+Put pictures of your character in two folders:
 
-| Field | Controls |
+```
+references/
+  closeup/   ← head-and-shoulders shots (front, 3/4, side, a few expressions)
+  full/      ← full-body shots (front, 3/4, side, back, sitting, …)
+```
+
+~6–8 images in each is enough. Variety of **angles** matters more than expressions.
+A close-up beat uses the `closeup/` pack; a full-body beat uses the `full/` pack.
+
+## A profile = one character
+
+Everything character-specific is one YAML file (see `profiles/psych-mascot.yaml`):
+
+| Field | Meaning |
 |---|---|
-| `lora_path`, `lora_scale` | which LoRA, how strongly |
-| `trigger_word` | word auto-prepended to every prompt to activate the LoRA |
-| `style_suffix` | style tokens appended to every prompt |
-| `character_brief` | description fed to the LLM so it writes on-character prompts |
-| `width`/`height`/`steps`/`guidance` | generation settings |
+| `references_dir` | folder with your `closeup/` + `full/` packs |
+| `ref_count` | how many references to feed per image (≈8) |
+| `character_brief` | a sentence describing the character (guides the LLM) |
+| `style_suffix` | style words added to every prompt |
+| `width`/`height`/`steps` | image size + denoising steps (klein ≈ 6) |
 | `min_beats`/`max_beats` | how many images per script |
-| `upscale`, `pid_resolution` | optional PiD 2K/4K upscaling |
-
-See `profiles/cinematic-character.yaml` and `profiles/bw-lineart.yaml`.
+| `upscale`, `pid_*` | optional PiD 2K/4K upscaling |
 
 ## Quickstart (on a RunPod pod)
 
-Full instructions: **[runpod/README.md](runpod/README.md)**. In short:
+Full steps: **[runpod/README.md](runpod/README.md)**. In short:
 ```bash
 export HF_TOKEN=hf_xxx
-bash runpod/setup.sh                                   # install + download + verify
-python scripts/download_lora.py <hf_lora_repo> --out /workspace/models/mine.safetensors
-# edit a profile, add projects/myvideo/script.txt, then:
-scriptframes segment  projects/myvideo --config profiles/mine.yaml
-scriptframes generate projects/myvideo --config profiles/mine.yaml
-scriptframes upscale  projects/myvideo --config profiles/mine.yaml   # optional
+bash runpod/setup.sh                       # installs everything + downloads models
+# put your reference packs at /workspace/references/{closeup,full}
+# put your script at projects/myvideo/script.txt
+scriptframes segment  projects/myvideo --config profiles/psych-mascot.yaml
+scriptframes generate projects/myvideo --config profiles/psych-mascot.yaml --limit 4
+scriptframes upscale  projects/myvideo --config profiles/psych-mascot.yaml   # optional
 ```
 
+Quick one-off test (no script): `python scripts/generate_one.py --refs /workspace/references/full --prompt "..."`.
+
 ## Requirements
-- A GPU pod (A100/H100 80 GB recommended) with a ≥150 GB network volume.
-- FLUX.1-dev (gated — accept its license) + a **FLUX.1-dev** LoRA. SDXL/FLUX.2 LoRAs won't load.
-- Python 3.10+. Heavy deps (torch/diffusers/transformers/PiD) are installed by `runpod/setup.sh`.
+- A GPU pod (**48 GB** comfortable; klein 9B ≈ 29 GB) + a ≥120 GB network volume.
+- FLUX.2-klein-9B (accept its license on HuggingFace).
+- Python 3.10+. Heavy deps are installed by `runpod/setup.sh`.
 
 ## Components
 ```
 src/scriptframes/   config, schema, prompt_template, seeds, manifest,
-                    segment (LLM), generate (FLUX), upscale (PiD), cli
-profiles/           example character/style profiles
-scripts/            download_lora.py, optional LoRA training (train_lora.py)
+                    segment (LLM), generate (FLUX.2), upscale (PiD), cli
+profiles/           example character profiles
+scripts/            generate_one.py (one-off reference test)
 runpod/             setup.sh, verify_models.py, README.md
 ```
 
-## Status / honest notes
-- FLUX + LoRA generation is proven working end-to-end.
-- PiD upscaling integration is wired but its exact CLI is confirmed on first pod run
-  (see note in `src/scriptframes/upscale.py`).
-- LoRA quality still needs per-character tuning (`lora_scale`, prompt phrasing) — that's
-  config, never code.
+## Note
+Earlier versions used FLUX.1 + a trained LoRA for the character; that drifted on
+complex scenes, so the project moved to **FLUX.2 reference conditioning**, which holds
+the character far more reliably.

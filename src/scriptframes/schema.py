@@ -14,13 +14,18 @@ class Beat:
     scene_description: str
     emotion: str
     image_prompt: str
-    negative_prompt: str = ""
+    shot: str = "full"          # "closeup" | "full" -> picks the reference pack
 
     def to_dict(self):
         return asdict(self)
 
 
 REQUIRED_FIELDS = ("id", "source_line", "scene_description", "emotion", "image_prompt")
+
+
+def _norm_shot(value) -> str:
+    v = str(value).strip().lower()
+    return "closeup" if v.startswith("close") else "full"
 
 
 def extract_json_block(raw: str) -> str:
@@ -34,7 +39,7 @@ def extract_json_block(raw: str) -> str:
     return text[min(starts):]
 
 
-def parse_beats(raw: str) -> list[Beat]:
+def parse_beats(raw: str) -> list:
     block = extract_json_block(raw)
     try:
         data, _ = json.JSONDecoder().raw_decode(block)
@@ -57,7 +62,7 @@ def parse_beats(raw: str) -> list[Beat]:
             scene_description=str(item["scene_description"]),
             emotion=str(item["emotion"]),
             image_prompt=str(item["image_prompt"]),
-            negative_prompt=str(item.get("negative_prompt", "")),
+            shot=_norm_shot(item.get("shot", "full")),
         ))
     return beats
 

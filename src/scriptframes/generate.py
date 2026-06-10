@@ -1,5 +1,5 @@
 from pathlib import Path
-from .prompt_template import finalize_prompt, DEFAULT_NEGATIVE
+from .prompt_template import finalize_prompt
 from . import manifest as M
 
 
@@ -12,13 +12,9 @@ def run_batch(manifest, manifest_path, images_dir, generator, config,
         todo = todo[:limit]
     for e in todo:
         try:
-            prompt = finalize_prompt(
-                e["image_prompt"], config.trigger_word, config.style_suffix
-            )
-            negative = e.get("negative_prompt") or DEFAULT_NEGATIVE
-            image = generator.generate(
-                prompt, negative, e["seed"], config.width, config.height
-            )
+            prompt = finalize_prompt(e["image_prompt"], config.style_suffix)
+            shot = e.get("shot", "full")
+            image = generator.generate(prompt, shot, e["seed"], config.width, config.height)
             image.save(images_dir / Path(e["output_file"]).name)
             M.mark_done(manifest, e["id"])
         except Exception as ex:  # continue-on-error
@@ -27,37 +23,45 @@ def run_batch(manifest, manifest_path, images_dir, generator, config,
     return manifest
 
 
-class FluxGenerator:
-    """FLUX.1-dev + character LoRA via diffusers.
+class Flux2Generator:
+    """FLUX.2 klein with reference-image conditioning (no LoRA).
 
-    GPU imports live inside the methods so `import scriptframes.generate` stays
-    importable without torch (keeps non-GPU tooling/tests light).
-    Note: FLUX.1-dev is guidance-distilled and ignores a negative prompt; it is
-    accepted for a uniform interface but not passed to the pipeline.
+    For each beat it feeds the reference pack matching the shot type
+    (`closeup` vs `full`) so the character stays consistent across scenes.
+    GPU imports live inside the methods so `import scriptframes.generate`
+    stays importable without torch.
     """
 
     def __init__(self, config):
         import torch
-        from diffusers import FluxPipeline
-        self.pipe = FluxPipeline.from_pretrained(
-            config.flux_model, torch_dtype=torch.bfloat16
+        from diffusers import Flux2KleinPipeline
+        self.pipe = Flux2KleinPipeline.from_pretrained(
+            config.flux2_model, torch_dtype=torch.bfloat16
         ).to("cuda")
-        if config.lora_path:
-            self.pipe.load_lora_weights(config.lora_path)
         self.steps = config.steps
-        self.guidance = config.guidance
-        self.lora_scale = config.lora_scale
+        self.ref_count = config.ref_count
+        self.references_dir = config.references_dir
+        self._packs = {}
 
-    def generate(self, prompt, negative, seed, width, height):
+    def _pack(self, shot):
+        import glob
+        import os
+        from PIL import Image
+        shot = "closeup" if str(shot).startswith("close") else "full"
+        if shot not in self._packs:
+            folder = os.path.join(self.references_dir, shot)
+            paths = sorted(glob.glob(os.path.join(folder, "*.png")))[: self.ref_count]
+            self._packs[shot] = [Image.open(p).convert("RGB") for p in paths]
+        return self._packs[shot]
+
+    def generate(self, prompt, shot, seed, width, height):
         import torch
-        generator = torch.Generator("cuda").manual_seed(int(seed))
-        result = self.pipe(
+        refs = self._pack(shot)
+        return self.pipe(
+            image=refs,
             prompt=prompt,
             width=width,
             height=height,
             num_inference_steps=self.steps,
-            guidance_scale=self.guidance,
-            generator=generator,
-            joint_attention_kwargs={"scale": self.lora_scale},
-        )
-        return result.images[0]
+            generator=torch.Generator("cuda").manual_seed(int(seed)),
+        ).images[0]

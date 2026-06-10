@@ -9,7 +9,7 @@ def build_manifest(project_name: str, beats, base_seed: int) -> dict:
         entries.append({
             "id": b.id,
             "image_prompt": b.image_prompt,
-            "negative_prompt": b.negative_prompt,
+            "shot": getattr(b, "shot", "full"),
             "seed": derive_seed(base_seed, b.id),
             "output_file": f"images/{b.id:02d}.png",
             "status": "pending",
